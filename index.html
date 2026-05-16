@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Nextleap Projects Git</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="background" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="page">
+    <form class="login-card" action="#" method="post" novalidate>
+      <h1 class="login-title">Login</h1>
+
+      <label class="field">
+        <span class="visually-hidden">Username</span>
+        <input type="text" name="username" placeholder="Username" autocomplete="username" required />
+        <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M5 20c0-4 3.5-6 7-6s7 2 7 6" stroke-linecap="round" />
+        </svg>
+      </label>
+
+      <label class="field">
+        <span class="visually-hidden">Password</span>
+        <input type="password" name="password" placeholder="Password" autocomplete="current-password" required />
+        <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+          <rect x="5" y="11" width="14" height="10" rx="2" />
+          <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke-linecap="round" />
+        </svg>
+      </label>
+
+      <div class="options-row">
+        <label class="remember">
+          <input type="checkbox" name="remember" />
+          <span class="checkbox-ui" aria-hidden="true"></span>
+          <span>Remember Me</span>
+        </label>
+        <a class="forgot" href="#">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-login">Login</button>
+
+      <p class="register-hint">
+        Don't have an account? <a href="#">Register</a>
+      </p>
+    </form>
+  </main>
+</body>
+</html>
