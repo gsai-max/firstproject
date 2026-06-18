@@ -30,7 +30,7 @@ def test_load_config_groww(monkeypatch):
     assert config.product.ingestion.max_reviews == 5000
     assert config.product.ingestion.min_words == 8
     assert config.product.ingestion.allowed_language == "en"
-    assert config.product.delivery.google_doc_id == "groww_shared_doc_id"
+    assert config.product.delivery.google_doc_id == "1WEU3Wi1StN0SBq-ICEw0g-LUQfbOBWi83vHEsNKqOIc"
     assert "product-leads@example.com" in config.product.delivery.email.recipients
     assert config.product.delivery.email.default_mode == "draft"
 

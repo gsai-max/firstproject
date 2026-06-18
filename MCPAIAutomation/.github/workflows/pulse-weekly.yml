@@ -1,0 +1,44 @@
+name: Weekly Product Review Pulse
+
+on:
+  schedule:
+    # Trigger every Monday at 09:00 AM IST (03:30 AM UTC)
+    - cron: '30 3 * * 1'
+  workflow_dispatch: # Enable manual run trigger from GitHub UI
+
+jobs:
+  run-pulse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Node.js Scraper Dependencies
+        run: |
+          cd mcp_servers/playstore_mcp
+          npm install
+
+      - name: Run Pulse Agent
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BYPASS_APPROVAL_KEY: ${{ secrets.BYPASS_APPROVAL_KEY }}
+          GOOGLE_DOC_ID: ${{ secrets.GOOGLE_DOC_ID }}
+          PULSE_EMAIL_TO: ${{ secrets.PULSE_EMAIL_TO }}
+          PULSE_EMAIL_MODE: ${{ secrets.PULSE_EMAIL_MODE || 'draft' }}
+        run: |
+          python -m src.main run --product groww
