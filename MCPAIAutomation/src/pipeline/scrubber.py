@@ -30,7 +30,8 @@ GENERIC_ID_RE = re.compile(
 
 # Regex for URLs. We will match any URL and redact it to [URL]
 URL_RE = re.compile(
-    r'https?://\S+'
+    r'https?://\S+',
+    re.IGNORECASE
 )
 
 def scrub_pii(text: str) -> str:
@@ -45,15 +46,17 @@ def scrub_pii(text: str) -> str:
     if not text:
         return ""
         
-    # Order of execution: Emails, then URLs, then PAN/Aadhaar/IDs, then Phones.
+    # Order of execution: Emails, then URLs, then Phones, then PAN/Aadhaar/IDs.
     # We redact URLs early to prevent URL components (like phone numbers/IDs in query strings)
     # from being double-redacted incorrectly.
+    # We redact Phones before Aadhaar/generic IDs to prevent 12-digit formatted numbers 
+    # (like +919876543210) from being classified as Aadhaar/IDs.
     
     text = EMAIL_RE.sub("[EMAIL]", text)
     text = URL_RE.sub("[URL]", text)
+    text = PHONE_RE.sub("[PHONE]", text)
     text = PAN_RE.sub("[ID]", text)
     text = AADHAAR_RE.sub("[ID]", text)
-    text = PHONE_RE.sub("[PHONE]", text)
     text = GENERIC_ID_RE.sub("[ID]", text)
     
     return text
