@@ -12,7 +12,7 @@ This document describes the system architecture for a facts-only, RAG-based FAQ 
 | **Source-backed responses** | Every answer carries exactly one citation URL from the active corpus |
 | **Compliance** | Advisory/comparison queries are classified and refused before or instead of retrieval |
 | **Accuracy over intelligence** | Prefer retrieved text over model inference; restricted corpus (110 URLs) reduces hallucination risk |
-| **Transparency** | Fixed response format: ≤3 sentences + citation + Last updated from sources: \<date\> footer |
+| **Transparency** | Fixed response format: ≤3 sentences + citation(s) + Last updated from sources: \<date\> footer |
 | **Privacy** | Stateless chat; no PII collection or persistence |
 
 ---
@@ -72,7 +72,7 @@ A premium, responsive single-page chat dashboard built inside the `frontend/` di
   * Accept free-text queries in a styled text input.
   * Render assistant replies inside message cards complete with Groww source citation links (external link icon) and `Last updated from sources: <date>` metadata footers.
   * Prevent PII submission by scrubbing Aadhaar, PAN, emails, and phone patterns (redundantly sanitized at both UI input limits and backend scrubber levels).
-  * Expose a **Select Schemes** Modal checklist populated dynamically from `/api/funds`. Toggled active selections suffix context strings to brief user messages (e.g. *“What is the NAV?”* -> *“What is the NAV? on ICICI Prudential Commodities Fund”*), forcing precise retrieval matching in the stateless `/api/chat` backend pipeline.
+  * Expose a **Select Schemes** Modal checklist populated dynamically from `/api/funds`. Toggled active selections are sent directly to the backend `/api/chat` endpoint inside the `selected_funds` payload. For single fund selections, the UI may also suffix query context (e.g. *“What is the NAV?”* -> *“What is the NAV? on ICICI Prudential Commodities Fund”*) for additional clarification.
 * **Suggested example questions:**
   1. *What is the expense ratio of ICICI Prudential Large Cap Fund?*
   2. *What is the exit load on ICICI Prudential Commodities Fund?*
@@ -83,14 +83,14 @@ A premium, responsive single-page chat dashboard built inside the `frontend/` di
 
 #### Chat Controller
 * Exposes a single endpoint, e.g., `POST /api/chat`
-* Accepts `{ "message": string }` only — no session identifiers tied to identity
+* Accepts `{ "message": string, "selected_funds": list[str] }` — stateless chat payload with optional selected fund slugs for scoped retrieval
 * Routes to classifier, then RAG or refusal path
 * Returns structured JSON for the UI to render:
   ```json
   {
     "answer": "The expense ratio of ICICI Prudential Large Cap Fund is 0.92%.",
-    "citation_url": "https://groww.in/mutual-funds/icici-prudential-large-cap-fund-direct-growth",
-    "last_updated": "2026-05-29",
+    "citation_url": "https://groww.in/mutual-funds/icici-prudential-large-cap-fund-direct-growth", // Comma-separated if multiple sources
+    "last_updated": "2026-05-29", // Comma-separated if multiple dates
     "is_refusal": false,
     "disclaimer": "Facts-only. No investment advice."
   }
@@ -126,7 +126,7 @@ Coordinates retrieval, prompt assembly, generation, and validation for factual q
 #### Response Formatter
 Enforces output contract:
 * Maximum 3 sentences in the answer body
-* Exactly one `citation_url` (must match one of the 110 corpus URLs when answering from corpus)
+* Comma-separated `citation_url` list containing the source URLs of all referenced schemes (must match the allowed corpus URLs)
 * Footer: `Last updated from sources: <date>` where `<date>` comes from chunk metadata (page fetch or parse timestamp), not model inference.
 
 ### 3.3 Retrieval Layer
@@ -173,9 +173,9 @@ Stores embedded text chunks with rich metadata:
 
 #### Retriever
 Two-stage retrieval for better precision on a small corpus:
-1. **Scheme resolution** — Match user query to one of the 110 schemes via slug, name, or alias (e.g. "large cap", "commodities fund")
-2. **Semantic search** — Top-k chunks (k=3–5) filtered by `source_url` or `scheme_name`, optionally boosted by section if query intent is detected (e.g. "fund manager" → boost `fund_management`)
-* Because the corpus is small (110 schemes), a hybrid approach is viable: metadata filter first, then vector similarity within that subset.
+1. **Scheme resolution** — If `selected_funds` are provided, query ChromaDB for each selected fund individually. Otherwise, fuzzy match the user query to a scheme via slug, name, or alias (e.g. "large cap", "commodities fund").
+2. **Semantic search** — Query ChromaDB with metadata filters applied on `slug` to restrict vector matching only to the target fund(s).
+* Because the corpus is small (110 schemes), querying per selected fund ensures high-quality grounding context is retrieved for every selected scheme without cross-contamination.
 
 ### 3.4 Generation Layer
 
@@ -326,15 +326,28 @@ sequenceDiagram
 
 #### Request:
 ```json
-{ "message": "Who manages ICICI Prudential Technology Fund?" }
+{
+  "message": "Who manages ICICI Prudential Technology Fund?",
+  "selected_funds": []
+}
+```
+Or for multi-fund filtering:
+```json
+{
+  "message": "nnav of both",
+  "selected_funds": [
+    "icici-prudential-gold-etf-fof-direct-growth",
+    "icici-prudential-silver-etf-fof-direct-growth"
+  ]
+}
 ```
 
 #### Response (factual):
 ```json
 {
   "answer": "ICICI Prudential Technology Direct Plan-Growth is managed by Anish Tawakley (since Sep 2018) and Vaibhav Dusad (since Jan 2021). Detailed manager experience and profiles are available on the scheme page.",
-  "citation_url": "https://groww.in/mutual-funds/icici-prudential-technology-fund-direct-growth",
-  "last_updated": "2026-05-29",
+  "citation_url": "https://groww.in/mutual-funds/icici-prudential-technology-fund-direct-growth", // Comma-separated if multiple sources
+  "last_updated": "2026-05-29", // Comma-separated if multiple dates
   "is_refusal": false,
   "disclaimer": "Facts-only. No investment advice."
 }

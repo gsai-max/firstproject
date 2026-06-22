@@ -40,3 +40,24 @@ def test_scrub_otp():
     assert "2026" in scrubbed2
     assert "[MASKED_OTP]" in scrubbed2
     assert "9876" not in scrubbed2
+
+def test_scrub_obfuscated_pan_phone_folio():
+    # Obfuscated PAN
+    text1 = "My PAN is ABCDE 1234 F"
+    assert "[MASKED_PAN]" in PIIScrubber.scrub_text(text1)
+    
+    # Obfuscated Phone
+    text2 = "Call me at +91 99-88-77-66-55"
+    assert "[MASKED_PHONE]" in PIIScrubber.scrub_text(text2)
+
+    # Contiguous 9-18 digit folio / bank account sequence
+    text3 = "My folio number is 12345678901234"
+    assert "[MASKED_FOLIO]" in PIIScrubber.scrub_text(text3)
+
+    # Phone obfuscated with dots, slashes, parentheses
+    text4 = "Call me at +91 99.88/77-66(55)"
+    assert "[MASKED_PHONE]" in PIIScrubber.scrub_text(text4)
+
+    # Folio obfuscated with brackets and spaces
+    text5 = "Folio is [123-456-789-012]"
+    assert "[MASKED_FOLIO]" in PIIScrubber.scrub_text(text5)

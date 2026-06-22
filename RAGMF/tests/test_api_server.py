@@ -119,3 +119,28 @@ def test_get_funds_endpoint():
         assert "nav" in first_fund
         assert "nav_date" in first_fund
 
+def test_chat_multiple_selected_funds():
+    """Verify that `/api/chat` successfully processes selected_funds in payload and answers correctly."""
+    with TestClient(app) as client:
+        selected = [
+            "icici-prudential-commodities-fund-direct-growth",
+            "icici-prudential-technology-fund-direct-growth"
+        ]
+        response = client.post(
+            "/api/chat",
+            json={
+                "message": "exit load of both",
+                "selected_funds": selected
+            }
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "answer" in data
+        assert data["is_refusal"] is False
+        assert "citation_url" in data
+        urls = data["citation_url"].split(",")
+        assert len(urls) == 2
+        assert any("commodities" in u for u in urls)
+        assert any("technology" in u for u in urls)
+        assert "last_updated" in data
+

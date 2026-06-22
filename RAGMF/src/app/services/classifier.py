@@ -24,6 +24,13 @@ class QueryClassifier:
         re.compile(r'\bbuy\s+(?:or|and)\s+sell\b', re.IGNORECASE),
         re.compile(r'\bwhether\s+to\s+buy\b', re.IGNORECASE),
         re.compile(r'\bis\s+.*?\bgood\s+(?:fund|investment|choice|to\s+buy)\b', re.IGNORECASE),
+        re.compile(r'\bmake\s+sense\s+(?:to|for)\b', re.IGNORECASE),
+        re.compile(r'\bworth\s+(?:buying|investing|to\s+buy)\b', re.IGNORECASE),
+        re.compile(r'\bsuitable\s+for\b', re.IGNORECASE),
+        re.compile(r'\bfit\s+for\b', re.IGNORECASE),
+        re.compile(r'\bwould\s+.*?\b(?:buy|invest)\b', re.IGNORECASE),
+        re.compile(r'\bshould\s+.*?\b(?:buy|invest)\b', re.IGNORECASE),
+        re.compile(r'\bcan\s+i\s+buy\b', re.IGNORECASE),
     ]
     
     # Patterns for Comparison

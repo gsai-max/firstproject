@@ -194,7 +194,10 @@ export default function App() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messagePayload })
+        body: JSON.stringify({
+          message: messagePayload,
+          selected_funds: selectedSlugs
+        })
       });
 
       if (!response.ok) {
@@ -327,23 +330,33 @@ export default function App() {
 
                       {/* Citation block if present */}
                       {msg.citation_url && (
-                        <div className="mt-2 pt-2 border-t border-slate-100 flex items-center gap-1">
-                          <a 
-                            className="text-link font-body-md text-[14px] flex items-center gap-1 hover:underline font-medium" 
-                            href={msg.citation_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                          >
-                            Source: {msg.citation_url.includes("groww.in") 
-                              ? `${funds.find(f => f.source_url === msg.citation_url)?.scheme_name || 'ICICI Prudential Mutual Fund'} - Groww`
-                              : msg.citation_url.includes("sebi.gov.in")
-                              ? "SEBI Investor Education Portal"
-                              : msg.citation_url.includes("amfiindia.com")
-                              ? "AMFI India Portal"
-                              : "Source Page"
-                            }
-                            <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-                          </a>
+                        <div className="mt-2 pt-2 border-t border-slate-100 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="text-[#64748B] font-semibold text-[13px]">Sources:</span>
+                          {msg.citation_url.split(',').map((url, index, arr) => {
+                            const trimmedUrl = url.trim();
+                            if (!trimmedUrl) return null;
+                            return (
+                              <div key={trimmedUrl} className="flex items-center gap-1">
+                                <a 
+                                  className="text-link font-body-md text-[14px] flex items-center gap-0.5 hover:underline font-medium" 
+                                  href={trimmedUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                >
+                                  {trimmedUrl.includes("groww.in") 
+                                    ? `${funds.find(f => f.source_url === trimmedUrl)?.scheme_name || 'ICICI Prudential Mutual Fund'} - Groww`
+                                    : trimmedUrl.includes("sebi.gov.in")
+                                    ? "SEBI Investor Education Portal"
+                                    : trimmedUrl.includes("amfiindia.com")
+                                    ? "AMFI India Portal"
+                                    : "Source Page"
+                                  }
+                                  <span className="material-symbols-outlined text-[15px] ml-0.5">open_in_new</span>
+                                </a>
+                                {index < arr.length - 1 && <span className="text-slate-300 font-normal select-none">|</span>}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
 

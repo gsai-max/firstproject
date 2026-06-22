@@ -18,6 +18,8 @@ def test_classify_advisory():
         "Give me some advice on where to invest my savings.",
         "Would you recommend investing in commodities fund?",
         "Is it a good time to buy or sell mutual funds?",
+        "If ICICI Technology Fund return is 25%, would it make sense for me to buy?",
+        "Is it worth investing in this fund?",
     ]
     for q in queries:
         assert QueryClassifier.classify(q) == "advisory"

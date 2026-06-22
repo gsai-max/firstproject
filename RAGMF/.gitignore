@@ -6,6 +6,9 @@ __pycache__/
 data/raw/
 data/processed/
 data/index/
+data/index_A/
+data/index_B/
+data/test_index/
 *.db
 *.log
 

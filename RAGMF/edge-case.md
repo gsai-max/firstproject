@@ -36,6 +36,8 @@ Before user messages are routed to intent classifiers, vector lookups, or LLM co
     * PAN: `[A-Z]{5}[0-9]{4}[A-Z]{1}` $\rightarrow$ `[PAN REDACTED]`
     * Aadhaar: `^[2-9]{1}[0-9]{3}\\s[0-9]{4}\\s[0-9]{4}$` $\rightarrow$ `[AADHAAR REDACTED]`
     * OTPs: `\b[0-9]{4,6}\b` $\rightarrow$ `[CODE REDACTED]`
+* **Aadhaar vs. Folio 12-Digit Ambiguity:** A 12-digit sequence satisfies both the Aadhaar (exactly 12 digits) and Folio/Account (9 to 18 digits) patterns. If Aadhaar has higher default priority, it gets masked as `[MASKED_AADHAAR]` even when referring to a folio.
+  * *Mitigation:* Dynamically inspect the query for context. If keywords like `folio`, `account`, or `bank` are present (and `aadhaar` is absent), classify the sequence as `[MASKED_FOLIO]`. Otherwise, default to `[MASKED_AADHAAR]`.
 
 ---
 

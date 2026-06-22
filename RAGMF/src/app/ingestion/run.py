@@ -10,7 +10,7 @@ import json
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
 import shutil
-from src.app.config import load_settings, load_corpus, get_active_index_path, set_active_index_name
+from src.app.config import load_settings, load_corpus, get_active_index_path, set_active_index_name, ROOT_DIR
 from src.app.ingestion.scraper import GrowwScraper
 from src.app.ingestion.parser import GrowwParser
 from src.app.ingestion.chunk import generate_chunks_from_processed_json
@@ -25,6 +25,24 @@ logging.basicConfig(
 logger = logging.getLogger("ingestion_runner")
 
 def run_ingestion(limit: int = None, force: bool = False, db_path: Path = None):
+    lock_file = ROOT_DIR / "crawler.lock"
+    if lock_file.exists():
+        logger.error(f"Ingestion lock file '{lock_file}' is present. Another instance might be running. Aborting.")
+        return False
+    try:
+        with open(lock_file, "w", encoding="utf-8") as lf:
+            lf.write(str(os.getpid()))
+        logger.info(f"Created lock file: {lock_file}")
+        return _run_ingestion_internal(limit, force, db_path)
+    finally:
+        if lock_file.exists():
+            try:
+                lock_file.unlink()
+                logger.info(f"Removed lock file: {lock_file}")
+            except Exception as e:
+                logger.error(f"Failed to remove lock file: {e}")
+
+def _run_ingestion_internal(limit: int = None, force: bool = False, db_path: Path = None):
     """
     Orchestrate fetching, parsing, caching, chunking, and indexing of Groww pages.
     """
@@ -129,6 +147,30 @@ def run_ingestion(limit: int = None, force: bool = False, db_path: Path = None):
             logger.error(f"Failed to parse content for: {slug}")
             stats["parse_failed"] += 1
             continue
+
+        # SELECTOR FAIL-SAFE CHECK
+        perf_sec = parsed_data.get("sections", {}).get("performance_pricing", {})
+        exp_sec = parsed_data.get("sections", {}).get("expense_ratio", {})
+        
+        parsed_nav = perf_sec.get("nav", "N/A")
+        parsed_exp = exp_sec.get("value", "N/A")
+        
+        if parsed_nav == "N/A" and parsed_exp == "N/A":
+            logger.warning(f"SELECTOR FAIL-SAFE TRIGGERED: Key fields (NAV, expense ratio) are empty/N/A for '{slug}'. Checking cached processed JSON.")
+            cached_path = processed_dir / f"{slug}.json"
+            if cached_path.exists():
+                try:
+                    with open(cached_path, "r", encoding="utf-8") as f:
+                        parsed_data = json.load(f)
+                    logger.info(f"Successfully fell back to cached processed data from {cached_path}")
+                except Exception as cache_err:
+                    logger.error(f"Failed to load cached processed data: {cache_err}. Skipping this scheme.")
+                    stats["parse_failed"] += 1
+                    continue
+            else:
+                logger.error(f"No previously cached processed JSON file found for '{slug}'. Skipping this scheme.")
+                stats["parse_failed"] += 1
+                continue
 
         stats["parse_success"] += 1
 

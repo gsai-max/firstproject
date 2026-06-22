@@ -42,10 +42,20 @@ class LLMGenerator:
                 "disclaimer": disclaimer
             }
 
-        # 2. Extract metadata from the primary chunk
-        primary_chunk = chunks[0]
-        citation_url = primary_chunk.get("source_url", "https://groww.in/")
-        last_updated = primary_chunk.get("last_updated", "N/A")
+        # 2. Extract metadata from all chunks (deduplicated while preserving order)
+        unique_urls = []
+        for c in chunks:
+            url = c.get("source_url")
+            if url and url not in unique_urls:
+                unique_urls.append(url)
+        citation_url = ",".join(unique_urls) if unique_urls else "https://groww.in/"
+
+        unique_dates = []
+        for c in chunks:
+            dt = c.get("last_updated")
+            if dt and dt not in unique_dates:
+                unique_dates.append(dt)
+        last_updated = ", ".join(unique_dates) if unique_dates else "N/A"
 
         # 3. Load configurations & check for API keys
         settings = load_settings()
@@ -149,8 +159,9 @@ class LLMGenerator:
 
     @staticmethod
     def _find_chunk_text_by_section(chunks: list[dict], section_name: str) -> str:
-        """Helper to find the text of the first chunk matching a section name."""
+        """Helper to find the text of all chunks matching a section name, combined."""
+        matched_texts = []
         for c in chunks:
             if c.get("section") == section_name:
-                return c["text"]
-        return ""
+                matched_texts.append(c["text"])
+        return " ".join(matched_texts) if matched_texts else ""

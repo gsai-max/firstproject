@@ -39,3 +39,24 @@ def test_retrieve_chunks_unfiltered():
     # Generic query should query the vector store without scheme filters
     chunks = retriever.retrieve_chunks("Who is the fund manager?")
     assert len(chunks) > 0
+
+def test_retrieve_chunks_multiple_filtered():
+    retriever = MFRetriever()
+    
+    # Query with specific multiple scheme slugs should filter chunks to only those schemes
+    selected = [
+        "icici-prudential-commodities-fund-direct-growth",
+        "icici-prudential-technology-fund-direct-growth"
+    ]
+    chunks = retriever.retrieve_chunks("exit load", selected_funds=selected)
+    
+    assert len(chunks) > 0
+    for chunk in chunks:
+        assert chunk["slug"] in selected
+
+def test_retrieve_chunks_low_similarity():
+    retriever = MFRetriever()
+    
+    # Query with completely irrelevant/off-topic text should return empty chunks list due to similarity threshold
+    chunks = retriever.retrieve_chunks("What is the recipe for baking a chocolate cake?")
+    assert len(chunks) == 0

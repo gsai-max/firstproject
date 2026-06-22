@@ -19,7 +19,7 @@ The table below maps the functional, non-functional, and compliance requirements
 | **REQ-07** | Generate polite refusal with SEBI / AMFI links for advisory intents | Phase 3 (Refusal Handler) | Assert refusal output and link correctness |
 | **REQ-08** | Two-stage retrieval: scheme matching + metadata semantic filter | Phase 4 (Retriever) | Top-k chunks metadata verification |
 | **REQ-09** | Constrain LLM generation: answer only from context, no advice | Phase 4 (LLM Generator) | Grounding tests, check for advice leakage |
-| **REQ-10** | Validate constraints: ≤3 sentences, citation allowed, append footer | Phase 5 (Output Validator) | Sentence split tests, footer timestamp check |
+| **REQ-10** | Validate constraints: ≤3 sentences, citation(s) allowed, append footer | Phase 5 (Output Validator) | Sentence split tests, footer timestamp check |
 | **REQ-11** | Expose REST endpoints: stateless POST `/api/chat` JSON API | Phase 6 (FastAPI App) | HTTP POST integration test assertions |
 | **REQ-12** | Automatic daily ingestion run (refresh corpus index offline) | Phase 7 (Daily Scheduler) | Scheduler invocation logging & mock runs |
 | **REQ-13** | Minimal web UI with disclaimer, examples, chat, and citation links | Phase 8 (Vite React UI) | UI rendering tests, responsive viewport checks |
@@ -115,7 +115,7 @@ graph TD
 
 ### Phase 3: PII Scrubber, Intent Classifier & Refusal Handler — [COMPLETED]
 * **Objective**: Intercepting queries, masking sensitive metrics, and blocking compliance-violating intents.
-* **Status**: Completed successfully. Integrated services in `src/app/services/` and verified with a robust unit testing suite (all 21 tests pass).
+* **Status**: Completed successfully. Integrated services in `src/app/services/` and verified with a robust unit testing suite. Updated the PII Scrubber to resolve overlapping 12-digit boundary conflicts between Aadhaar and Folio sequences by leveraging contextual keywords (such as 'folio', 'account', or 'bank') to determine the correct masking tag.
 * **Tasks**:
   1. Implement PII Scrubber ([pii_scrubber.py](file:///c:/Nextleap%20Projects%20Git/RAGMF/src/app/services/pii_scrubber.py)) using regex filters to strip Aadhaar, PAN, phone numbers, emails, and OTP numbers. (Completed)
   2. Implement Classifier ([classifier.py](file:///c:/Nextleap%20Projects%20Git/RAGMF/src/app/services/classifier.py)) to identify factual vs. advisory vs. out-of-scope query strings. (Completed)
@@ -128,9 +128,9 @@ graph TD
 
 ### Phase 4: Retriever & LLM Orchestrator — [COMPLETED]
 * **Objective**: Implementing the RAG query engine with scheme-aware retrieval and context constraints.
-* **Status**: Completed successfully. Added `retriever.py` and `generator.py` inside `src/app/services/`. Implemented fuzzy scheme resolution and filtered collection queries on ChromaDB, plus REST endpoint connections (Gemini/Groq) and local smart mock generators.
+* **Status**: Completed successfully. Added `retriever.py` and `generator.py` inside `src/app/services/`. Implemented fuzzy scheme resolution and filtered collection queries on ChromaDB, plus REST endpoint connections (Gemini/Groq) and local smart mock generators. Updated to query ChromaDB for each selected fund individually when multiple selections are present, combining retrieved chunks to support accurate multi-fund answers.
 * **Tasks**:
-  1. Implement Retriever ([retriever.py](file:///c:/Nextleap%20Projects%20Git/RAGMF/src/app/services/retriever.py)) to map query to scheme, extract metadata filters, and perform cosine vector matching. (Completed)
+  1. Implement Retriever ([retriever.py](file:///c:/Nextleap%20Projects%20Git/RAGMF/src/app/services/retriever.py)) to map query to scheme, extract metadata filters, and perform cosine vector matching. Extended to query each fund slug individually when `selected_funds` list is present to guarantee precise context retrieval for all target funds. (Completed)
   2. Build Prompt templates enforcing context grounding (preventing open-domain responses). (Completed)
   3. Implement LLM Generator connector using Gemini or Groq client libraries. (Completed, configured via requests and smart mock fallbacks)
 * **Deliverables**: Retrieval module, prompting templates, and generator integrations.
@@ -144,7 +144,7 @@ graph TD
 * **Status**: Completed successfully. Added `response_validator.py` inside `src/app/services/`. Implemented sentence count limit (max 3), citation URL allowlist matching, advisory leakage detection, and factual grounding checks.
 * **Tasks**:
   1. Implement validator ([response_validator.py](file:///c:/Nextleap%20Projects%20Git/RAGMF/src/app/services/response_validator.py)) checking sentence count limits (max 3) and applying truncation fallback. (Completed)
-  2. Validate citation URLs (ensuring they exist within the allowed active corpus list). (Completed)
+  2. Validate citation URLs (ensuring all returned URLs exist within the allowed active corpus list). (Completed)
   3. Format output response mapping footer timestamp from chunk index. (Completed)
 * **Deliverables**: Validator and formatter scripts with strict text parsing.
 * **Exit Criteria**: Assert generated responses match length constraints and contain exactly one valid citation link and correct last-updated timestamp. (Verified via `test_response_validator.py`)
@@ -157,7 +157,7 @@ graph TD
 * **Status**: Completed successfully. Created the api_server entrypoint with wildcard CORS, custom IP-based rate limiting, request validation schemas, exception formatting, and the complete pipeline routing. Unit and integration tests verify all endpoints.
 * **Tasks**:
   1. Create FastAPI application script ([api_server.py](file:///c:/Nextleap%20Projects%20Git/RAGMF/src/app/api_server.py)). (Completed)
-  2. Set up single stateless endpoint `/api/chat` (POST request accepting client query, executing the pipeline, returning structured JSON). (Completed)
+  2. Set up single stateless endpoint `/api/chat` (POST request accepting client query and `selected_funds` slug list, executing the pipeline, returning structured JSON). (Completed)
   3. Implement basic rate limits and error responses. (Completed)
 * **Deliverables**: FastAPI routes, server configuration, and endpoint contracts.
 * **Exit Criteria**: Backend server starts, handles REST requests, and serves clean JSON answers. (Verified via `test_api_server.py` and manual curls)
@@ -165,13 +165,14 @@ graph TD
 
 ---
 
-### Phase 7: Daily Scheduler Task
+### Phase 7: Daily Scheduler Task — [COMPLETED]
 * **Objective**: Setting up the daily schedule to trigger ingestion updates.
+* **Status**: Completed successfully. Developed a standard-library background worker script (`daily.py`) running daily execution scheduling calculations at 9:15 AM IST, integrated with the runner's atomic directory swap (`index_A`/`index_B`) mechanism via the active pointers tracker. Covered by unit tests (`test_scheduler.py`).
 * **Tasks**:
-  1. Implement scheduler script ([daily.py](file:///c:/Nextleap%20Projects%20Git/RAGMF/scheduler/daily.py)) running daily cron logic (e.g., using APScheduler or Python background worker).
-  2. Add logic to build indexes atomically, swapping the vector database files once complete without blocking retrieval.
+  1. Implement scheduler script ([daily.py](file:///c:/Nextleap%20Projects%20Git/RAGMF/scheduler/daily.py)) running daily cron logic (e.g., using APScheduler or Python background worker). (Completed)
+  2. Add logic to build indexes atomically, swapping the vector database files once complete without blocking retrieval. (Completed)
 * **Deliverables**: Daily crawler scheduler script and swap workflow logs.
-* **Exit Criteria**: Triggering the schedule refreshes the data files cleanly.
+* **Exit Criteria**: Triggering the schedule refreshes the data files cleanly. (Verified)
 * **Dependencies**: Phase 2.
 
 ---
@@ -181,7 +182,7 @@ graph TD
 * **Tasks**:
   1. Initialize React project using Vite inside `frontend/` directory. (Completed)
   2. Code CSS styling with Outfit/Inter typography, modern glassmorphism panels, soft gradients, and micro-animations for message bubble renders. (Completed)
-  3. Implement chat components: disclaimer header ("Facts-only. No investment advice."), chat window, 3 clickable example card triggers, and output templates mapping citations and last-updated footers. (Completed)
+  3. Implement chat components: disclaimer header ("Facts-only. No investment advice."), chat window, 3 clickable example card triggers, scheme selection modal checklist, and output templates mapping citations and last-updated footers. Updated to pass the array of selected fund slugs (`selectedSlugs`) directly inside the API request body. (Completed)
 * **Deliverables**: React TypeScript codebase, Tailwind layout styles, and interactive state components.
 * **Exit Criteria**: Web dashboard renders nicely on desktop and mobile viewports, capturing queries and rendering responses properly. (Verified)
 * **Dependencies**: Phase 6.

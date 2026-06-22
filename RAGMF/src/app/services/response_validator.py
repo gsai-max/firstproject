@@ -49,14 +49,34 @@ class ResponseValidator:
         # 2. Citation URL Allowlist check
         citation_url = response.get("citation_url")
         allowed_urls = cls._get_allowed_urls()
+        # Also include common refusal URLs in allowed_urls
+        extended_allowed = allowed_urls | {
+            "https://www.amfiindia.com/",
+            "https://investor.sebi.gov.in/",
+            "https://www.amfiindia.com/investor/knowledge-center-info?faqs"
+        }
         
-        if not citation_url or citation_url not in allowed_urls:
-            # Fallback to the first chunk's source URL
+        valid_citations = []
+        if citation_url:
+            for url in citation_url.split(","):
+                url_clean = url.strip()
+                if url_clean in extended_allowed:
+                    valid_citations.append(url_clean)
+        
+        if not valid_citations:
             if chunks:
-                citation_url = chunks[0].get("source_url")
+                # Fallback to unique source URLs from chunks
+                unique_urls = []
+                for c in chunks:
+                    u = c.get("source_url")
+                    if u and u not in unique_urls:
+                        unique_urls.append(u)
+                citation_url = ",".join(unique_urls)
             else:
                 citation_url = "https://www.amfiindia.com/"
             response["citation_url"] = citation_url
+        else:
+            response["citation_url"] = ",".join(valid_citations)
 
         answer = response.get("answer", "").strip()
         if not answer:

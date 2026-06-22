@@ -89,6 +89,7 @@ app.add_middleware(
 # API Request/Response Schemas
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, description="The user query text")
+    selected_funds: list[str] = Field(default_factory=list, description="List of selected scheme slugs")
 
 class ChatResponse(BaseModel):
     answer: str = Field(..., description="The response text")
@@ -155,7 +156,7 @@ async def chat(payload: ChatRequest, request: Request):
     try:
         # Retrieve chunks from database
         retriever = request.app.state.retriever
-        chunks = retriever.retrieve_chunks(scrubbed_query)
+        chunks = retriever.retrieve_chunks(scrubbed_query, selected_funds=payload.selected_funds)
         logger.info(f"Retrieved {len(chunks)} context chunks from ChromaDB.")
 
         # Generate grounding answer

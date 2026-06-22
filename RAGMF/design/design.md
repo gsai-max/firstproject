@@ -71,7 +71,7 @@ The palette is inspired by modern financial platforms (like Groww) but muted to 
 
 ### 4.4. Assistant Response Footer & Citation
 Every assistant response must contain a citation and a date footer.
-* **Citation Link:** Displayed as a distinct block or pill below the main text. Font: `Inter` Medium 13px, `#2563EB`. Icon: Small external link icon.
+* **Citation Links:** Displayed as distinct clickable links below the main text, separated by inline dividers (`|`) if multiple funds are selected. Font: `Inter` Medium 13px, `#2563EB`. Icon: Small external link icon next to each link.
 * **Last Updated Footer:** Font: `Inter` Regular 12px, `#64748B`. Text: `Last updated from sources: <date>`. Displayed at the very bottom of the assistant bubble.
 
 ### 4.5. Chat Input Area

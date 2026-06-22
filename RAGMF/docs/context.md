@@ -10,7 +10,7 @@ The system must strictly avoid providing investment advice, opinions, recommenda
 ## Objectives
 - **Factual Q&A**: Design and implement a lightweight Retrieval-Augmented Generation (RAG)-based assistant that answers factual queries about mutual fund schemes.
 - **Curated Corpus**: Utilize an active corpus of ICICI Prudential Mutual Fund scheme pages.
-- **Source-Backed Responses**: Provide concise, source-backed responses with exactly one citation link and a last-updated footer.
+- **Source-Backed Responses**: Provide concise, source-backed responses with citation links (supporting multiple citation links when multiple funds are selected) and a last-updated footer.
 
 ---
 
@@ -37,7 +37,7 @@ The assistant must answer objective and verifiable queries. The chatbot must sto
 
 #### Response Format Constraints
 - **Length**: Maximum of 3 sentences per response.
-- **Citation**: Exactly one citation link pointing to the relevant Groww scheme page.
+- **Citation**: Clickable citation link(s) pointing to the relevant Groww scheme page(s) (supporting multiple source links if multiple funds are selected).
 - **Footer**: Every response must include the footer:
   `Last updated from sources: <date>` (using the page fetch/parse date)
 
@@ -101,7 +101,7 @@ To ensure regulatory compliance and user security, the system must **never** col
    - `“Facts-only. No investment advice.”`
 3. **Interactive React Dashboard**:
    - Single-page application built inside `frontend/` using Vite, React, TypeScript, and Tailwind CSS.
-   - Responsive modal selection list mapping all active schemes and query entity suffixing.
+   - Responsive modal selection list mapping all active schemes, supporting multi-fund filtering by passing selected fund slugs to the backend to constrain retrieval precisely.
 
 ---
 
