@@ -99,6 +99,9 @@ To ensure regulatory compliance and user security, the system must **never** col
    - Known limitations.
 2. **Disclaimer Snippet** visible on the UI:
    - `“Facts-only. No investment advice.”`
+3. **Interactive React Dashboard**:
+   - Single-page application built inside `frontend/` using Vite, React, TypeScript, and Tailwind CSS.
+   - Responsive modal selection list mapping all active schemes and query entity suffixing.
 
 ---
 
@@ -107,4 +110,5 @@ To ensure regulatory compliance and user security, the system must **never** col
 - **Strict Compliance**: Zero occurrences of advisory or opinionated responses.
 - **Source Integrity**: Reliable inclusion of a single valid source citation link in every response.
 - **Robust Refusal**: Handles out-of-scope queries gracefully and educationally.
-- **Clean UI**: Provides a user-friendly, responsive interface.
+- **Premium Responsive UI**: Renders a visually stunning Groww-inspired interface optimized for both desktop viewports and mobile screens, offering real-time fund search filtering and query scoping context integrations.
+

@@ -64,18 +64,20 @@ graph TD
 
 ## 3. System Components
 
-### 3.1 Presentation Layer (Minimal UI)
-A lightweight single-page chat interface inspired by Groww's mutual fund detail pages as reference context.
+### 3.1 Presentation Layer (Vite + React TypeScript UI)
+A premium, responsive single-page chat dashboard built inside the `frontend/` directory using React, TypeScript, Vite, and Tailwind CSS.
 * **Responsibilities:**
-  * Display welcome message and disclaimer: `“Facts-only. No investment advice.”`
-  * Show three clickable example questions (covering scheme facts and fund management)
-  * Accept free-text user queries
-  * Render assistant replies with citation link and last-updated footer
-  * Never prompt for or accept PII (PAN, Aadhaar, account numbers, OTP, email, phone)
+  * Display welcoming introductory guidelines and warnings disclaimer banner: `“Facts-only. No investment advice.”`
+  * Show three clickable FAQ question chips that auto-dispatch query prompts on click.
+  * Accept free-text queries in a styled text input.
+  * Render assistant replies inside message cards complete with Groww source citation links (external link icon) and `Last updated from sources: <date>` metadata footers.
+  * Prevent PII submission by scrubbing Aadhaar, PAN, emails, and phone patterns (redundantly sanitized at both UI input limits and backend scrubber levels).
+  * Expose a **Select Schemes** Modal checklist populated dynamically from `/api/funds`. Toggled active selections suffix context strings to brief user messages (e.g. *“What is the NAV?”* -> *“What is the NAV? on ICICI Prudential Commodities Fund”*), forcing precise retrieval matching in the stateless `/api/chat` backend pipeline.
 * **Suggested example questions:**
   1. *What is the expense ratio of ICICI Prudential Large Cap Fund?*
   2. *What is the exit load on ICICI Prudential Commodities Fund?*
   3. *Who manages ICICI Prudential Technology Direct Plan-Growth?*
+
 
 ### 3.2 Application Layer
 

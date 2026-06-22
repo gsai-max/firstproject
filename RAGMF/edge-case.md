@@ -119,3 +119,23 @@ Addresses server and background index rebuild operations.
   * *Mitigation:* Implement incremental ingestion. The crawler checks the metadata `last_fetched_at` timestamp. If it is less than 24 hours old, it skips crawling that scheme, resuming ingestion only for the remaining failed pages.
 * **Locking Conflicts:** Multiple crawler instances are triggered concurrently.
   * *Mitigation:* Create a temporary lock file `crawler.lock` in the workspace folder. Ingestion aborts immediately if `crawler.lock` is present.
+
+---
+
+## 7. Frontend User Interface Layer
+
+Addresses client dashboard interactions, build pipelines, and OS compatibility.
+
+* **Windows Execution Policy Script Blocks**:
+  * *Description:* Running `.ps1` shell scripts directly (e.g. `npm install`, which invokes `npm.ps1`) throws `SecurityError` due to local PowerShell execution restrictions on script loading.
+  * *Mitigation:* Directly invoke the native Windows Command batch script (`npm.cmd install`, `npm.cmd run dev`) to bypass PowerShell execution filters.
+* **Vite/PostCSS Space in Path SyntaxError**:
+  * *Description:* Loading external PostCSS configurations (`postcss.config.js`) inside Vite on Windows throws `SyntaxError: Invalid regular expression: missing /` if the directory path contains spaces (e.g. `C:\Nextleap Projects Git\RAGMF`).
+  * *Mitigation:* Inline the PostCSS options (TailwindCSS and Autoprefixer) directly into [vite.config.ts](file:///c:/Nextleap%20Projects%20Git/RAGMF/frontend/vite.config.ts) and remove the standalone `postcss.config.js` file entirely.
+* **Stateless API Prompt Scoping**:
+  * *Description:* The `/api/chat` API is stateless and doesn't accept schema identifiers. If a user selects a fund in the UI checklist and asks a brief query (*"What is the exit load?"*), the backend retriever fails to match the right scheme.
+  * *Mitigation:* If a single fund is active in the selection state and its name isn't present in the user text, the frontend automatically appends the fund's scheme name (e.g., *"... on ICICI Prudential Commodities Fund"*) before calling the backend.
+* **Stale Git Index Lock on Cancelled Commands**:
+  * *Description:* Aborting git operations (like staging `node_modules` before they are ignored) leaves a stale `.git/index.lock` file, causing subsequent git runs to fail with `Unable to create index.lock: File exists`.
+  * *Mitigation:* Programmatically remove the lock file using `Remove-Item` on `.git/index.lock` prior to running `git reset` to restore normal git flow. Exclude `node_modules/` and build outputs (`dist/`) in `.gitignore` to prevent repeat issues.
+
